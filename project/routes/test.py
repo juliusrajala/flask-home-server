@@ -10,3 +10,7 @@ def hello():
 def root():
     route = "root route"
     return f'This is the {route}'
+
+@routes.route('/haloo')
+def haloo():
+    return 'Huhuu!'
