@@ -1,10 +1,10 @@
 from flask import request, jsonify, Response
 from project.routes import routes
-from project.services.spotify import init_service
+from project.services.spotify import init_search_service
 import functools
 import json
 
-spotify_client = init_service()
+spotify_client = init_search_service()
 
 def map_response_item(item):
     return {
