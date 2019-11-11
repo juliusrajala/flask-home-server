@@ -10,6 +10,7 @@ pytest = "*"
 [packages]
 flask = "*"
 flask-cors = "*"
+spotipy = "*"
 
 [requires]
 python_version = "3.7"

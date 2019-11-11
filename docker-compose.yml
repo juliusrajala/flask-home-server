@@ -19,6 +19,8 @@ services:
     environment:
       - APP_PORT=${APP_PORT}
       - SECRET_KEY=${SECRET_KEY}
+      - SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID}
+      - SPOTIFY_CLIENT_SECRET=${SPOTIFY_CLIENT_SECRET}
     volumes:
       - .:/app
     depends_on:
