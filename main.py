@@ -1,7 +1,9 @@
 import os
 from project import app
+from flask_cors import CORS
 
 if __name__ == "__main__":
+    CORS(app)
     port = int(os.environ.get("APP_PORT", 5000))
     secret_key = str(os.environ.get("SECRET_KEY", ''))
     if secret_key == '':
