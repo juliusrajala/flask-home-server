@@ -1,42 +1,46 @@
 import os
 import spotipy
-from spotipy.oauth2 import SpotifyClientCredentials
+import spotipy.oauth2 as SPOauth
+import webbrowser
 from spotipy.util import prompt_for_user_token
+from enum import Enum
 
 client_id = str(os.environ.get('SPOTIFY_CLIENT_ID', ''))
 client_secret = str(os.environ.get('SPOTIFY_CLIENT_SECRET', ''))
 spotify_username = str(os.environ.get('SPOTIFY_USERNAME', ''))
-spotify_redirect = str(os.environ.get('SPOTIFY_REDIRECT_URL', ''))
+redirect_uri = str(os.environ.get('SPOTIFY_REDIRECT_URL', ''))
+
+def build_auth_uri(secret):
+    client_scope = "user-modify-playback-state user-read-currently-playing user-read-playback-state"
+    return ''.join([
+        'https://accounts.spotify.com/authorize?client_id=',
+        client_id,
+        '&response_type=code&redirect_uri=',
+        redirect_uri,
+        '&scope=',
+        client_scope,
+        '&state=',
+        secret
+    ])
 
 def init_search_service():
     if client_id == '' or client_secret == '':
         raise Exception('Invalid client_id or client_secret')
-    credentials_manager = SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
+    credentials_manager = SPOauth.SpotifyClientCredentials(client_id=client_id, client_secret=client_secret)
     spotipy_client = spotipy.Spotify(client_credentials_manager=credentials_manager)
     return spotipy_client
 
 class PlayerService:
     """Using the spotify authorization code flow. """
     def __init__(self, client):
-        self.access_token = ''
-        print(f'Initializing client with {client}')
-        self.client = client
+        self.registration_secret = ''
         self.is_player_client = False
 
-        if client_id == '' or client_secret == '' or spotify_redirect == '':
-            raise Exception('Invalid spotify authorization')
+        self.access_token = ''
+        self.client = client
 
-        client_scope = "user-modify-playback-state user-read-currently-playing user-read-playback-state"
-        try:
-            prompt_for_user_token(
-                username=spotify_username,
-                scope=client_scope,
-                client_id=client_id,
-                client_secret=client_secret,
-                redirect_uri=spotify_redirect
-            )
-        except (EOFError):
-            print('Error while reading input')
+    def set_registered(self, secret):
+        self.registration_secret = secret
 
     def inject_token(self, auth_code):
         self.access_token = auth_code
