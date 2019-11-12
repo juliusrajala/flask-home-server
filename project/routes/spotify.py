@@ -1,7 +1,8 @@
+import functools
+import time
 from flask import request, jsonify, Response, redirect
 from project.routes import routes
 from project.services.spotify import init_search_service, SpotifyService, build_auth_uri
-import functools
 
 spotifyService = SpotifyService(init_search_service())
 spotify_client = spotifyService.get_client
@@ -39,6 +40,23 @@ def now_playing():
 @routes.route('/v1/spotify/devices')
 def get_devices():
     return jsonify(spotifyService.devices())
+
+
+@routes.route('/v1/spotify/control')
+def control_playback():
+    if not spotifyService.is_active():
+        return 'Client not authorized yet'
+
+    command = request.args.get('command', '')
+
+    if spotifyService.control_playback(command):
+        # Yes, I'm well aware this is a dirty hack to wait for the next song.
+        time.sleep(5)
+        response = spotifyService.currently_playing()
+        return jsonify(map_spotify_song(response['item']))
+
+    response = spotifyService.currently_playing()
+    return jsonify(map_spotify_song(response['item']))
 
 
 @routes.route('/v1/spotify/auth')

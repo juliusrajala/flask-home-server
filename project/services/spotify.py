@@ -111,3 +111,30 @@ class SpotifyService:
         uri = 'me/player'
         response = self._get(uri)
         return json.loads(response.text)
+
+    def control_playback(self, command):
+        """
+            Following the documentation for the Spotify controls
+            the player library returns a status-code of 204 on
+            success, requests should be validated on route side
+        """
+        command_dict = {
+            'next': self.play_next,
+            'previous': self.play_previous
+        }
+        if command not in command_dict:
+            return False
+
+        status = command_dict[command]()
+        return status == 204
+
+    def play_next(self):
+        """ As per the documentation """
+        uri = 'me/player/next'
+        response = self._post(uri)
+        return response.status_code
+
+    def play_previous(self):
+        uri = 'me/player/previous'
+        response = self._post(uri)
+        return response.status_code
