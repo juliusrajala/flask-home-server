@@ -1,10 +1,11 @@
 from flask import request, jsonify, Response
 from project.routes import routes
-from project.services.spotify import init_search_service
+from project.services.spotify import init_search_service, PlayerService
 import functools
 import json
 
-spotify_client = init_search_service()
+SpotifyService = PlayerService(init_search_service())
+spotify_client = SpotifyService.client
 
 def map_response_item(item):
     return {
@@ -27,4 +28,14 @@ def search():
 
 @routes.route('/v1/spotify/now_playing')
 def now_playing():
-    return jsonify({ "track":"Test 4", "artist":"Artist", "id":"ID4" })
+    if not SpotifyService.is_player_client:
+        return 'Client not configured for user'
+    response = spotify_client.current_user()
+    return response
+
+@routes.route('/v1/spotify/auth')
+def authenticate():
+    global spotify_client
+    auth_code = request.args.get('code')
+    spotify_client = SpotifyService.inject_token(auth_code)
+    return f'Registered token {auth_code}'
