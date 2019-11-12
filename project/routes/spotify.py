@@ -1,6 +1,7 @@
 import functools
 import time
-from flask import request, jsonify, Response, redirect
+import json
+from flask import request, jsonify, Response, redirect, current_app
 from project.routes import routes
 from project.services.spotify import init_search_service, SpotifyService, build_auth_uri
 
@@ -34,6 +35,7 @@ def now_playing():
     if not spotifyService.is_active():
         return 'Client not authorized yet'
     response = spotifyService.currently_playing()
+    current_app.logger.info(response)
     return jsonify(map_spotify_song(response['item']))
 
 
@@ -50,11 +52,13 @@ def control_playback():
     if request.method == 'POST':
         json_data = request.get_json()
         command = json_data['command']
+        current_app.logger.info(f'Parameters for playback {json_data}')
         if not command:
             return 'Bad request body, include command in request'
-        if spotifyService.control_playback(command):
-            # Yes, I'm well aware this is a dirty hack to wait for the next song.
-            time.sleep(5)
+        if spotifyService.control_playback(command=command, uuid=json_data['uuid'] if 'uuid' in json_data else ''):
+            # Sadly, it takes a bit to start the playback.
+            # We make up for it with this nasty wait here.
+            time.sleep(3)
             response = spotifyService.currently_playing()
             return jsonify(map_spotify_song(response['item']))
 
@@ -65,7 +69,7 @@ def control_playback():
 @routes.route('/v1/spotify/auth')
 def authenticate():
     if spotifyService.is_active():
-        print(f'Access token already found')
+        current_app.logger.info('Access token already found')
         return jsonify(spotify_client().current_user())
 
     if spotifyService.test_secret():  # We validate the source with a secret
