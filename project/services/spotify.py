@@ -56,6 +56,9 @@ class SpotifyService:
     def _post(self, url, data={}):
         return requests.post(f'https://api.spotify.com/v1/{url}', headers=self._auth_headers(), data=data)
 
+    def _put(self, url, data={}):
+        return requests.put(f'https://api.spotify.com/v1/{url}', headers=self._auth_headers(), data=data)
+
     def _get(self, url):
         return requests.get(f'https://api.spotify.com/v1/{url}', headers=self._auth_headers())
 
@@ -120,7 +123,8 @@ class SpotifyService:
         """
         command_dict = {
             'next': self.play_next,
-            'previous': self.play_previous
+            'previous': self.play_previous,
+            'play': self.play_pause
         }
         if command not in command_dict:
             return False
@@ -137,4 +141,9 @@ class SpotifyService:
     def play_previous(self):
         uri = 'me/player/previous'
         response = self._post(uri)
+        return response.status_code
+
+    def play_pause(self):
+        uri = 'me/player/play'
+        response = self._put(uri)
         return response.status_code
