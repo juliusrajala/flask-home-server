@@ -36,24 +36,42 @@ def init_search_service():
     return spotipy_client
 
 
-class PlayerService:
+class SpotifyService:
     """Using the spotify authorization code flow. """
 
     def __init__(self, client):
-        self.registration_secret = ''
-        self.is_player_client = False
+        self._access_token = ''
+        self._registration_secret = ''
+        self._is_active_client = False
 
-        self.access_token = ''
         self.client = client
 
+    def _auth_headers(self):
+        return {'Authorization': 'Bearer {0}'.format(self._access_token)}
+
+    # HTTP_METHODS
     def _post(self, data):
         return requests.post(token_endpoint, data)
+
+    def _get(self, url):
+        return requests.get(f'https://api.spotify.com/v1/{url}', headers=self._auth_headers())
+
+    # Service-utilities
+    def test_secret(self, comparison=''):
+        """
+        :param: Comparison is empty by default
+        """
+        return self._registration_secret == comparison
+
+    def is_active(self):
+        return self._is_active_client and self._access_token != ''
 
     def get_client(self):
         return self.client
 
+    # Authentication
     def set_registered(self, secret):
-        self.registration_secret = secret
+        self._registration_secret = secret
 
     def validate_tokens(self, access_code):
         response = self._post({
@@ -73,9 +91,15 @@ class PlayerService:
         """ TODO: Implement refresh-token flow """
 
     def inject_token(self, access_token):
-        self.access_token = access_token
         if access_token == '':
             raise Exception('Access token was called with an empty string')
 
+        self._access_token = access_token
         self.client = spotipy.Spotify(auth=access_token)
-        self.is_player_client = True
+        self._is_active_client = True
+
+    # API-endpoints
+    def devices(self):
+        uri = 'me/player/devices'
+        response = self._get(uri)
+        return json.loads(response.text)

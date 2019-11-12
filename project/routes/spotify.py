@@ -1,10 +1,10 @@
 from flask import request, jsonify, Response, redirect
 from project.routes import routes
-from project.services.spotify import init_search_service, PlayerService, build_auth_uri
+from project.services.spotify import init_search_service, SpotifyService, build_auth_uri
 import functools
 
-SpotifyService = PlayerService(init_search_service())
-spotify_client = SpotifyService.get_client
+spotifyService = SpotifyService(init_search_service())
+spotify_client = spotifyService.get_client
 
 
 def map_response_item(item):
@@ -29,30 +29,34 @@ def search():
 
 @routes.route('/v1/spotify/now_playing')
 def now_playing():
-    if not SpotifyService.is_player_client:
+    if not spotifyService.is_active():
         return 'Client not configured for user'
-    print('Spotify accessToken is', SpotifyService.access_token)
     response = spotify_client().current_user()
     return response
 
 
+@routes.route('/v1/spotify/devices')
+def get_devices():
+    return jsonify(spotifyService.devices())
+
+
 @routes.route('/v1/spotify/auth')
 def authenticate():
-    if SpotifyService.registration_secret == '':
-        generated_secret = 'Secret_Token'
-        # Replace secret token with generated one.
-        SpotifyService.set_registered(generated_secret)
-        return redirect(build_auth_uri(generated_secret), code=302)
-    access_code = request.args.get('code')
-
-    if SpotifyService.access_token:
-        print(f'Access token already found {access_code}')
+    if spotifyService.is_active():
+        print(f'Access token already found')
         return jsonify(spotify_client().current_user())
 
-    received_secret = request.args.get('state')
+    if spotifyService.test_secret(''):
+        generated_secret = 'Secret_Token'
+        # Replace secret token with generated one.
+        spotifyService.set_registered(generated_secret)
+        return redirect(build_auth_uri(generated_secret), code=302)
 
-    if received_secret == SpotifyService.registration_secret and access_code:
-        SpotifyService.validate_tokens(access_code)
+    access_code = request.args.get('code')
+    received_secret = request.args.get('state')
+    if spotifyService.test_secret(received_secret) and access_code:
+        spotifyService.validate_tokens(access_code)
         return f'Updating access tokens with {access_code}'
 
-    raise Exception('Something went wrong')
+    raise Exception(
+        f'Something went wrong {spotifyService.is_active()} {spotifyService._access_token}')
