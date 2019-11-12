@@ -69,6 +69,9 @@ class PlayerService:
         for i in response_data:
             print("key: ", i, "val: ", response_data[i])
 
+    def refresh_token(self):
+        """ TODO: Implement refresh-token flow """
+
     def inject_token(self, access_token):
         self.access_token = access_token
         if access_token == '':
