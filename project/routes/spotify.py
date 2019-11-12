@@ -42,18 +42,21 @@ def get_devices():
     return jsonify(spotifyService.devices())
 
 
-@routes.route('/v1/spotify/control')
+@routes.route('/v1/spotify/control', methods=['POST', 'GET'])
 def control_playback():
     if not spotifyService.is_active():
         return 'Client not authorized yet'
 
-    command = request.args.get('command', '')
-
-    if spotifyService.control_playback(command):
-        # Yes, I'm well aware this is a dirty hack to wait for the next song.
-        time.sleep(5)
-        response = spotifyService.currently_playing()
-        return jsonify(map_spotify_song(response['item']))
+    if request.method == 'POST':
+        json_data = request.get_json()
+        command = json_data['command']
+        if not command:
+            return 'Bad request body, include command in request'
+        if spotifyService.control_playback(command):
+            # Yes, I'm well aware this is a dirty hack to wait for the next song.
+            time.sleep(5)
+            response = spotifyService.currently_playing()
+            return jsonify(map_spotify_song(response['item']))
 
     response = spotifyService.currently_playing()
     return jsonify(map_spotify_song(response['item']))
