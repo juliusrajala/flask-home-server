@@ -6,11 +6,13 @@ verify_ssl = true
 [dev-packages]
 pylint = "*"
 pytest = "*"
+autopep8 = "*"
 
 [packages]
 flask = "*"
 flask-cors = "*"
 spotipy = "*"
+requests = "*"
 
 [requires]
 python_version = "3.7"
