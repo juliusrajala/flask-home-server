@@ -22,7 +22,7 @@ def build_auth_uri(secret):
         client_scope,
         '&state=',
         secret,
-        '&show_dialog=true'
+        # '&show_dialog=true'
     ])
 
 
@@ -50,8 +50,11 @@ class SpotifyService:
         return {'Authorization': 'Bearer {0}'.format(self._access_token)}
 
     # HTTP_METHODS
-    def _post(self, data):
+    def _post_auth(self, data):
         return requests.post(token_endpoint, data)
+
+    def _post(self, url, data={}):
+        return requests.post(f'https://api.spotify.com/v1/{url}', headers=self._auth_headers(), data=data)
 
     def _get(self, url):
         return requests.get(f'https://api.spotify.com/v1/{url}', headers=self._auth_headers())
@@ -74,7 +77,7 @@ class SpotifyService:
         self._registration_secret = secret
 
     def validate_tokens(self, access_code):
-        response = self._post({
+        response = self._post_auth({
             'client_id': client_id,
             'client_secret': client_secret,
             'grant_type': 'authorization_code',
@@ -101,5 +104,10 @@ class SpotifyService:
     # API-endpoints
     def devices(self):
         uri = 'me/player/devices'
+        response = self._get(uri)
+        return json.loads(response.text)
+
+    def currently_playing(self):
+        uri = 'me/player'
         response = self._get(uri)
         return json.loads(response.text)
